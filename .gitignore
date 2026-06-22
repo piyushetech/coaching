@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Accidental root npm artifacts (not part of the app)
+/package-lock.json
+/package.json
+
+# OS
+.DS_Store
+Thumbs.db

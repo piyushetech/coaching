@@ -1,0 +1,539 @@
+<div class="settings-page">
+  <header class="page-hero">
+    <div class="hero-text">
+      <h1 class="portal-title">Profile & Settings</h1>
+      <p>Manage your account{{ isAdmin ? ' and institute users' : '' }}</p>
+    </div>
+    @if (currentUser) {
+      <div class="hero-badge">
+        @if (getUserAvatarUrl(currentUser); as avatarUrl) {
+          <img [src]="avatarUrl" alt="" class="avatar avatar-img" />
+        } @else {
+          <span class="avatar">{{ getUserInitial(currentUser) }}</span>
+        }
+        <div>
+          <strong>{{ currentUser.name }}</strong>
+          @if (isHeadAdmin(currentUser)) {
+            <span class="role-tag owner">Head Admin</span>
+          } @else if (currentUser.role === 'admin') {
+            <span class="role-tag admin">Admin</span>
+          } @else {
+            <span class="role-tag">Student</span>
+          }
+        </div>
+      </div>
+    }
+  </header>
+
+  <nav class="tab-bar">
+    <button type="button" [class.active]="activeTab === 'profile'" (click)="setTab('profile')">
+      <span class="tab-icon">👤</span> My Profile
+    </button>
+    <button type="button" [class.active]="activeTab === 'security'" (click)="setTab('security')">
+      <span class="tab-icon">🔒</span> Password
+    </button>
+    @if (isAdmin) {
+      <button type="button" [class.active]="activeTab === 'users'" (click)="setTab('users')">
+        <span class="tab-icon">👥</span> Users
+      </button>
+      <button type="button" [class.active]="activeTab === 'courses'" (click)="setTab('courses')">
+        <span class="tab-icon">📚</span> Courses
+      </button>
+    }
+    @if (isOwner) {
+      <button type="button" [class.active]="activeTab === 'ratings'" (click)="setTab('ratings')">
+        <span class="tab-icon">⭐</span> Teacher Ratings
+      </button>
+    }
+  </nav>
+
+  <!-- PROFILE TAB -->
+  @if (activeTab === 'profile' && currentUser) {
+    <section class="panel">
+      @if (isHeadAdmin(currentUser)) {
+        <p class="panel-note">You have access to all courses as head admin.</p>
+      } @else if ((currentUser.courses?.length ?? 0) > 0) {
+        <p class="panel-note">Your courses: <strong>{{ courseLabels(currentUser.courses) }}</strong></p>
+      } @else {
+        <p class="panel-note warn">No courses assigned yet — contact your admin.</p>
+      }
+
+      <div class="profile-photo-section">
+        <div class="profile-photo-wrap">
+          @if (getUserAvatarUrl(currentUser); as avatarUrl) {
+            <img [src]="avatarUrl" alt="Profile photo" class="profile-photo" />
+          } @else {
+            <div class="profile-photo profile-photo-fallback">{{ getUserInitial(currentUser) }}</div>
+          }
+        </div>
+        <div class="profile-photo-meta">
+          <h4>Profile Photo</h4>
+          <p class="muted">Upload a photo for your account. JPG, PNG or WebP — max 5 MB.</p>
+          <div class="profile-photo-actions">
+            <label class="btn-outline small photo-upload-btn" [class.disabled]="savingAvatar">
+              {{ savingAvatar ? 'Uploading...' : 'Change Photo' }}
+              <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden (change)="onAvatarSelected($event)" [disabled]="savingAvatar" />
+            </label>
+            @if (currentUser.profile?.avatarUrl) {
+              <button type="button" class="btn-ghost small" (click)="removeAvatar()" [disabled]="savingAvatar">Remove</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label><span>Mobile</span><input [(ngModel)]="profile.mobile" name="mobile" type="tel" placeholder="10-digit mobile" /></label>
+        <label><span>Education</span><input [(ngModel)]="profile.education" name="education" placeholder="e.g. 12th Science" /></label>
+        <label class="full"><span>Address</span><textarea [(ngModel)]="profile.address" name="address" rows="2" placeholder="Full address"></textarea></label>
+        <label><span>Marks / Grade</span><input [(ngModel)]="profile.educationMarks" name="educationMarks" placeholder="e.g. 85%" /></label>
+        <label><span>Email</span><input [value]="currentUser.email" disabled class="disabled" /></label>
+      </div>
+      <div class="panel-actions">
+        <button type="button" class="btn-primary" [disabled]="savingProfile" (click)="saveProfile()">
+          {{ savingProfile ? 'Saving...' : 'Save Profile' }}
+        </button>
+      </div>
+      @if (profileMsg) { <p class="msg success">{{ profileMsg }}</p> }
+      @if (profileErr) { <p class="msg error">{{ profileErr }}</p> }
+
+      @if (isAdmin && receivedAppreciations.length) {
+        <div class="sub-section">
+          <h4>Student Appreciation</h4>
+          <p class="muted">Messages of thanks and feedback from your students.</p>
+          @for (a of receivedAppreciations; track a.id) {
+            <div class="feedback-card appreciation-card">
+              <div class="feedback-head">
+                <strong>{{ a.studentName }}</strong>
+                <span class="muted">{{ a.date }}</span>
+              </div>
+              <p>{{ a.message }}</p>
+            </div>
+          }
+        </div>
+      }
+
+      @if (isStudent) {
+        <div class="sub-section">
+          <h4>Teacher Feedback</h4>
+          @if (myFeedback.length) {
+            @for (fb of myFeedback; track fb.id) {
+              <div class="feedback-card">
+                <div class="feedback-head">
+                  <strong>{{ fb.teacherName }}</strong>
+                  <span class="muted">{{ fb.date }}</span>
+                </div>
+                <p>{{ fb.message }}</p>
+              </div>
+            }
+          } @else {
+            <p class="muted">No feedback from teachers yet.</p>
+          }
+        </div>
+
+        <div class="sub-section">
+          <h4>Rate Your Teachers</h4>
+          <p class="muted">Share how your instructors are doing (1–5 stars). You can update your rating anytime.</p>
+          @if (ratingMsg) { <p class="msg success">{{ ratingMsg }}</p> }
+          @if (ratingErr) { <p class="msg error">{{ ratingErr }}</p> }
+          @for (t of teachers; track t.id) {
+            <div class="rating-card">
+              <div class="rating-head">
+                <strong>{{ t.name }}</strong>
+                <span class="muted">{{ isHeadAdmin(t) ? 'Head Admin' : 'Teacher' }}</span>
+              </div>
+              <div class="star-row">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <button type="button" class="star-btn" [class.active]="(ratingForms[t.id]?.rating ?? 0) >= star" (click)="setStar(t.id, star)">★</button>
+                }
+              </div>
+              <input class="rating-comment" [(ngModel)]="ratingForms[t.id].comment" [name]="'cmt-' + t.id" placeholder="Optional comment..." />
+              <button type="button" class="btn-outline small" (click)="submitRating(t.id)">
+                {{ hasRating(t.id) ? 'Update Rating' : 'Submit Rating' }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="sub-section">
+          <h4>Appreciation & Feedback for Teachers</h4>
+          <p class="muted">Send a thank-you note or constructive feedback to your admin or teacher. You can edit it later.</p>
+          @if (appreciationMsg) { <p class="msg success">{{ appreciationMsg }}</p> }
+          @if (appreciationErr) { <p class="msg error">{{ appreciationErr }}</p> }
+          @for (t of teachers; track t.id) {
+            <div class="rating-card appreciation-form-card">
+              <div class="rating-head">
+                <strong>{{ t.name }}</strong>
+                @if (hasAppreciation(t.id)) {
+                  <span class="saved-tag">Saved</span>
+                }
+              </div>
+              <textarea
+                class="appreciation-textarea"
+                [(ngModel)]="appreciationForms[t.id].message"
+                [name]="'appr-' + t.id"
+                rows="3"
+                placeholder="Write appreciation or feedback for this teacher..."
+              ></textarea>
+              <button type="button" class="btn-outline small" (click)="submitAppreciation(t.id)">
+                {{ hasAppreciation(t.id) ? 'Update Message' : 'Send Appreciation' }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <!-- SECURITY TAB -->
+  @if (activeTab === 'security') {
+    <section class="panel panel-narrow">
+      <p class="panel-note">Use a strong password with at least 6 characters.</p>
+      <div class="form-grid single">
+        <label><span>Current Password</span><input [(ngModel)]="passwordForm.current" name="curPwd" type="password" /></label>
+        <label><span>New Password</span><input [(ngModel)]="passwordForm.next" name="newPwd" type="password" /></label>
+        <label><span>Confirm New Password</span><input [(ngModel)]="passwordForm.confirm" name="confirmPwd" type="password" /></label>
+      </div>
+      <div class="panel-actions">
+        <button type="button" class="btn-primary" [disabled]="savingPassword" (click)="changePassword()">
+          {{ savingPassword ? 'Updating...' : 'Update Password' }}
+        </button>
+      </div>
+      @if (passwordMsg) { <p class="msg success">{{ passwordMsg }}</p> }
+      @if (passwordErr) { <p class="msg error">{{ passwordErr }}</p> }
+    </section>
+  }
+
+  <!-- USERS TAB -->
+  @if (activeTab === 'users' && isAdmin) {
+    <section class="panel">
+      <div class="users-toolbar">
+        <div>
+          <h3>User Management</h3>
+          <p class="muted">Assign courses and manage student accounts</p>
+        </div>
+        <div class="toolbar-actions">
+          <button type="button" class="btn-outline" (click)="openDialog('add-student')">+ Add Student</button>
+          @if (isOwner) {
+            <button type="button" class="btn-primary" (click)="openDialog('add-admin')">+ Add Admin</button>
+          }
+        </div>
+      </div>
+
+      @if (toastMsg) { <div class="toast success">{{ toastMsg }}</div> }
+      @if (toastErr) { <div class="toast error">{{ toastErr }}</div> }
+
+      <div class="table-wrap">
+        <table class="users-table">
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Mobile</th><th>Role</th><th>Mock Score</th><th>Courses</th><th></th></tr>
+          </thead>
+          <tbody>
+            @for (u of users; track u.id) {
+              <tr>
+                <td><span class="user-name">{{ u.name }}</span></td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.profile?.mobile || '—' }}</td>
+                <td>
+                  @if (isHeadAdmin(u)) {
+                    <span class="role-tag owner">head</span>
+                  } @else if (u.role === 'admin') {
+                    <span class="role-tag admin">admin</span>
+                  } @else {
+                    <span class="role-tag">student</span>
+                  }
+                </td>
+                <td>
+                  @if (u.role === 'student') {
+                    @let perf = getStudentScore(u);
+                    <span class="perf-badge" [class]="performanceClass(perf.tier)">
+                      @if (perf.avg !== null) {
+                        {{ perf.avg }}% · {{ performanceLabel(perf.tier) }}
+                      } @else {
+                        {{ performanceLabel(perf.tier) }}
+                      }
+                    </span>
+                    @if (perf.attempts) {
+                      <small class="muted block">{{ perf.attempts }} attempt(s)</small>
+                    }
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="courses-cell">
+                  @if (isHeadAdmin(u)) {
+                    <span class="muted">All</span>
+                  } @else {
+                    {{ courseLabels(u.courses) }}
+                  }
+                </td>
+                <td class="actions-cell">
+                  @if (u.id === currentUser?.id) {
+                    <span class="you-tag">You</span>
+                  } @else if (isHeadAdmin(u)) {
+                    <span class="muted">—</span>
+                  } @else {
+                    <div class="action-group">
+                      @if (u.role === 'student') {
+                        <button type="button" class="icon-action" title="Edit" (click)="openDialog('edit-student', u)">✎</button>
+                        <button type="button" class="icon-action" title="Feedback" (click)="openDialog('feedback', u)">💬</button>
+                      }
+                      @if (u.role === 'admin' && isOwner) {
+                        <button type="button" class="icon-action" title="Edit Admin" (click)="openDialog('edit-admin', u)">✎</button>
+                      }
+                      <button type="button" class="icon-action" title="Courses" (click)="openDialog('edit-courses', u)">📚</button>
+                      @if (u.role === 'student' || isOwner) {
+                        <button type="button" class="icon-action danger" title="Delete" (click)="deleteUser(u)">🗑</button>
+                      }
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  <!-- COURSES TAB -->
+  @if (activeTab === 'courses' && isAdmin) {
+    <section class="panel">
+      <div class="users-toolbar">
+        <div>
+          <h3>Course Management</h3>
+          <p class="muted">Add or remove courses available for uploads, exams, and student access</p>
+        </div>
+      </div>
+
+      <div class="course-add-row">
+        <label class="course-add-field">
+          <span>New course name</span>
+          <input [(ngModel)]="newCourseName" name="newCourseName" placeholder="e.g. TET, Patwari, Banking" (keyup.enter)="addCourse()" />
+        </label>
+        <button type="button" class="btn-primary" (click)="addCourse()" [disabled]="addingCourse || !newCourseName.trim()">
+          {{ addingCourse ? 'Adding...' : '+ Add Course' }}
+        </button>
+      </div>
+
+      @if (courseMsg) { <p class="msg success">{{ courseMsg }}</p> }
+      @if (courseErr) { <p class="msg error">{{ courseErr }}</p> }
+
+      <div class="course-manage-list">
+        @for (c of coursesService.courses(); track c.id) {
+          <div class="course-manage-item">
+            <div>
+              <strong>{{ c.label }}</strong>
+              <span class="muted course-id-tag">{{ c.id }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn-ghost small danger-text"
+              (click)="deleteCourse(c.id, c.label)"
+              [disabled]="deletingCourseId === c.id">
+              {{ deletingCourseId === c.id ? 'Deleting...' : 'Delete' }}
+            </button>
+          </div>
+        } @empty {
+          <p class="muted">No courses yet. Add JEE, NEET, GK, SSC, UP Police, or any custom course.</p>
+        }
+      </div>
+    </section>
+  }
+
+  <!-- RATINGS TAB (head admin) -->
+  @if (activeTab === 'ratings' && isOwner) {
+    <section class="panel">
+      <h3>Teacher Rating Overview</h3>
+      <p class="muted">Average ratings from students — only visible to head admin.</p>
+      <div class="ratings-grid">
+        @for (s of teacherSummaries; track s.teacher.id) {
+          <div class="rating-summary-card">
+            <div class="rating-summary-head">
+              <strong>{{ s.teacher.name }}</strong>
+              @if (isHeadAdmin(s.teacher)) {
+                <span class="role-tag owner">head</span>
+              } @else {
+                <span class="role-tag admin">teacher</span>
+              }
+            </div>
+            <div class="rating-big">
+              <span class="rating-avg">{{ s.count ? s.average : '—' }}</span>
+              <span class="muted">/ 5 avg</span>
+            </div>
+            <p class="muted">{{ s.count }} student{{ s.count === 1 ? '' : 's' }} rated</p>
+            @if (s.ratings.length) {
+              <ul class="rating-list">
+                @for (r of s.ratings; track r.id) {
+                  <li>
+                    <span>{{ r.studentName }}</span>
+                    <span class="stars-inline">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
+                    @if (r.comment) { <em class="muted">"{{ r.comment }}"</em> }
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+<!-- DIALOG BACKDROP -->
+@if (activeDialog) {
+  <div class="dialog-backdrop" (click)="closeDialog()">
+    <div class="dialog" (click)="$event.stopPropagation()" role="dialog">
+      <header class="dialog-header">
+        <div>
+          @switch (activeDialog) {
+            @case ('add-student') { <h2>Add Student</h2><p>Create a student with profile & course access</p> }
+            @case ('add-admin') { <h2>Add Admin</h2><p>Create a staff admin account</p> }
+            @case ('edit-student') { <h2>Edit Student</h2><p>Update email and mobile for {{ dialogUser?.name }}</p> }
+            @case ('edit-admin') { <h2>Edit Admin</h2><p>Update details for {{ dialogUser?.name }}</p> }
+            @case ('edit-courses') { <h2>Course Access</h2><p>Assign courses for {{ dialogUser?.name }}</p> }
+            @case ('feedback') { <h2>Student Feedback</h2><p>{{ editingFeedbackId ? 'Edit feedback for' : 'Write feedback for' }} {{ dialogUser?.name }}</p> }
+          }
+        </div>
+        <button type="button" class="dialog-close" (click)="closeDialog()">✕</button>
+      </header>
+
+      <div class="dialog-body">
+        @if (activeDialog === 'add-student') {
+          <div class="form-grid">
+            <label><span>Name *</span><input [(ngModel)]="newStudent.name" name="studentName" /></label>
+            <label><span>Email *</span><input [(ngModel)]="newStudent.email" name="studentEmail" type="email" /></label>
+            <label><span>Password *</span><input [(ngModel)]="newStudent.password" name="studentPassword" type="password" /></label>
+            <label><span>Mobile</span><input [(ngModel)]="newStudent.mobile" name="studentMobile" type="tel" /></label>
+            <label class="full"><span>Address</span><input [(ngModel)]="newStudent.address" name="studentAddress" /></label>
+            <label><span>Education</span><input [(ngModel)]="newStudent.education" name="studentEducation" /></label>
+            <label><span>Marks / Grade</span><input [(ngModel)]="newStudent.educationMarks" name="studentMarks" /></label>
+            <div class="full course-picks">
+              <span class="field-label">Course Access</span>
+              <div class="course-chips">
+                @for (c of coursesService.courses(); track c.id) {
+                  <label class="course-chip" [class.selected]="isCourseSelected(newStudent.courses, c.id)">
+                    <input type="checkbox" hidden
+                      [checked]="isCourseSelected(newStudent.courses, c.id)"
+                      (change)="newStudent.courses = toggleCourse(newStudent.courses, c.id)" />
+                    {{ c.label }}
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+          @if (studentErr) { <p class="msg error">{{ studentErr }}</p> }
+        }
+
+        @if (activeDialog === 'add-admin') {
+          <div class="form-grid">
+            <label><span>Name *</span><input [(ngModel)]="newAdmin.name" name="adminName" /></label>
+            <label><span>Email *</span><input [(ngModel)]="newAdmin.email" name="adminEmail" type="email" /></label>
+            <label><span>Password *</span><input [(ngModel)]="newAdmin.password" name="adminPassword" type="password" /></label>
+            <label><span>Mobile</span><input [(ngModel)]="newAdmin.mobile" name="adminMobile" type="tel" /></label>
+            <label class="full"><span>Address</span><input [(ngModel)]="newAdmin.address" name="adminAddress" /></label>
+            <label><span>Education</span><input [(ngModel)]="newAdmin.education" name="adminEducation" /></label>
+            <label><span>Marks / Grade</span><input [(ngModel)]="newAdmin.educationMarks" name="adminMarks" /></label>
+            <div class="full course-picks">
+              <span class="field-label">Course Access</span>
+              <div class="course-chips">
+                @for (c of coursesService.courses(); track c.id) {
+                  <label class="course-chip" [class.selected]="isCourseSelected(newAdmin.courses, c.id)">
+                    <input type="checkbox" hidden
+                      [checked]="isCourseSelected(newAdmin.courses, c.id)"
+                      (change)="newAdmin.courses = toggleCourse(newAdmin.courses, c.id)" />
+                    {{ c.label }}
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+          @if (adminErr) { <p class="msg error">{{ adminErr }}</p> }
+        }
+
+        @if (activeDialog === 'edit-student') {
+          <div class="form-grid single">
+            <label><span>Email *</span><input [(ngModel)]="editStudent.email" name="editEmail" type="email" /></label>
+            <label><span>Mobile</span><input [(ngModel)]="editStudent.mobile" name="editMobile" type="tel" /></label>
+          </div>
+          @if (studentErr) { <p class="msg error">{{ studentErr }}</p> }
+        }
+
+        @if (activeDialog === 'edit-admin') {
+          <div class="form-grid single">
+            <label><span>Name *</span><input [(ngModel)]="editAdmin.name" name="editAdminName" /></label>
+            <label><span>Email *</span><input [(ngModel)]="editAdmin.email" name="editAdminEmail" type="email" /></label>
+            <label><span>Mobile</span><input [(ngModel)]="editAdmin.mobile" name="editAdminMobile" type="tel" /></label>
+          </div>
+          @if (adminErr) { <p class="msg error">{{ adminErr }}</p> }
+        }
+
+        @if (activeDialog === 'edit-courses') {
+          <div class="course-chips large">
+            @for (c of coursesService.courses(); track c.id) {
+              <label class="course-chip" [class.selected]="isCourseSelected(editCourses, c.id)">
+                <input type="checkbox" hidden
+                  [checked]="isCourseSelected(editCourses, c.id)"
+                  (change)="editCourses = toggleCourse(editCourses, c.id)" />
+                {{ c.label }}
+              </label>
+            }
+          </div>
+        }
+
+        @if (activeDialog === 'feedback') {
+          @if (adminFeedbackHistory.length) {
+            <div class="feedback-history">
+              <span class="field-label">Your previous feedback</span>
+              @for (fb of adminFeedbackHistory; track fb.id) {
+                <div class="feedback-card compact" [class.active]="editingFeedbackId === fb.id">
+                  <div class="feedback-head">
+                    <span class="muted">{{ fb.date }}</span>
+                    <button type="button" class="btn-ghost tiny" (click)="editAdminFeedback(fb)">Edit</button>
+                  </div>
+                  <p>{{ fb.message }}</p>
+                </div>
+              }
+              <button type="button" class="btn-ghost small" (click)="startNewFeedbackToStudent()">+ Write new feedback</button>
+            </div>
+          }
+          <label class="full"><span>Feedback message</span>
+            <textarea [(ngModel)]="feedbackText" name="feedbackText" rows="4" placeholder="Write constructive feedback for this student..."></textarea>
+          </label>
+          @if (feedbackErr) { <p class="msg error">{{ feedbackErr }}</p> }
+        }
+      </div>
+
+      <footer class="dialog-footer">
+        <button type="button" class="btn-ghost" (click)="closeDialog()">Cancel</button>
+        @if (activeDialog === 'add-student') {
+          <button type="button" class="btn-primary" [disabled]="creatingStudent" (click)="addStudent()">
+            {{ creatingStudent ? 'Creating...' : 'Create Student' }}
+          </button>
+        }
+        @if (activeDialog === 'add-admin') {
+          <button type="button" class="btn-primary" [disabled]="creatingAdmin" (click)="addAdmin()">
+            {{ creatingAdmin ? 'Creating...' : 'Create Admin' }}
+          </button>
+        }
+        @if (activeDialog === 'edit-student') {
+          <button type="button" class="btn-primary" [disabled]="savingStudent" (click)="saveStudentDetails()">
+            {{ savingStudent ? 'Saving...' : 'Save Changes' }}
+          </button>
+        }
+        @if (activeDialog === 'edit-admin') {
+          <button type="button" class="btn-primary" [disabled]="savingAdmin" (click)="saveAdminDetails()">
+            {{ savingAdmin ? 'Saving...' : 'Save Changes' }}
+          </button>
+        }
+        @if (activeDialog === 'edit-courses') {
+          <button type="button" class="btn-primary" (click)="saveCourses()">Save Courses</button>
+        }
+        @if (activeDialog === 'feedback') {
+          <button type="button" class="btn-primary" [disabled]="savingFeedback" (click)="saveFeedback()">
+            {{ savingFeedback ? 'Saving...' : (editingFeedbackId ? 'Update Feedback' : 'Send Feedback') }}
+          </button>
+        }
+      </footer>
+    </div>
+  </div>
+}

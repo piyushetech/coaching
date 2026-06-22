@@ -1,0 +1,25 @@
+<div class="notif-page">
+  <div class="notif-head">
+    <div>
+      <h1 class="portal-title">Notifications</h1>
+      <p class="portal-subtitle">Stay updated with Sankalp Classes announcements</p>
+    </div>
+    <button type="button" class="btn-ghost" (click)="markAllRead()">Mark all read</button>
+  </div>
+
+  <div class="notif-list">
+    @for (n of notifications(); track n.id) {
+      <article class="notif-card" [class.unread]="!n.read" (click)="markRead(n.id)">
+        <div class="notif-icon" [class]="n.type">{{ n.type === 'success' ? '✓' : n.type === 'alert' ? '!' : 'ℹ' }}</div>
+        <div class="notif-body">
+          <h3>{{ n.title }}</h3>
+          <p>{{ n.message }}</p>
+          <small class="muted">{{ n.date }}</small>
+        </div>
+        @if (!n.read) {
+          <span class="unread-dot"></span>
+        }
+      </article>
+    }
+  </div>
+</div>

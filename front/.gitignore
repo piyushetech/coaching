@@ -1,0 +1,26 @@
+# Dependencies
+**/node_modules/
+
+# Angular build
+courses/dist/
+courses/.angular/
+courses/tmp/
+courses/out-tsc/
+
+# Backend secrets & uploads
+backend/.env
+backend/uploads/
+
+# Logs
+**/npm-debug.log
+**/yarn-error.log
+
+# IDE / editor
+.vs/
+.idea/
+**/.history/
+*.vsidx
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,398 @@
+<div class="dashboard-content">
+  <div class="page-header">
+    <h1 class="portal-title">{{ pageTitle() }}</h1>
+    <div class="subtitle portal-subtitle">{{ pageSubtitle() }}</div>
+  </div>
+
+  <!-- Video Player Modal -->
+  <div class="player-backdrop" *ngIf="selected() && selected()?.type === 'video'">
+    <div class="player-card">
+      <div class="player-header">
+        <strong>{{ selected()?.title }}</strong>
+        <button type="button" class="close-btn" (click)="selected.set(null)">✕</button>
+      </div>
+      <div class="player-body">
+        <video *ngIf="selected()?.url" controls autoplay [attr.poster]="selected()?.thumbnail" crossorigin="anonymous" playsinline>
+          <source [src]="resolveMediaUrl(selected()?.url)" type="video/mp4" />
+        </video>
+        <div *ngIf="!selected()?.url" class="no-src">No playable URL available.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Viewer Modal -->
+  <div class="player-backdrop" *ngIf="selected() && selected()?.type === 'pdf'" (click)="closeViewer()">
+    <div class="player-card pdf-card" (click)="$event.stopPropagation()">
+      <div class="player-header">
+        <strong>{{ selected()?.title }}</strong>
+        <div class="pdf-header-actions">
+          <button type="button" class="open-tab-btn" (click)="openPdfInNewTab()" [disabled]="openingInTab()">
+            {{ openingInTab() ? 'Opening…' : 'Open in Tab' }}
+          </button>
+          <button type="button" class="close-btn prominent" (click)="closeViewer()">✕ Close</button>
+        </div>
+      </div>
+      <div class="player-body pdf-body">
+        @if (pdfLoading()) {
+          <div class="pdf-loader">
+            <div class="pdf-loader-icon">📄</div>
+            <div class="spinner"></div>
+            <p class="pdf-loader-title">Opening document</p>
+            <p class="pdf-loader-name">{{ selected()?.title }}</p>
+            <p class="pdf-loader-hint">Please wait while the preview loads…</p>
+          </div>
+        }
+        @if (pdfViewerUrl()) {
+          <iframe
+            [src]="pdfViewerUrl()"
+            title="PDF Viewer"
+            frameborder="0"
+            [class.pdf-frame-hidden]="pdfLoading()"
+            (load)="onPdfLoaded()"
+          ></iframe>
+        }
+        @if (!selected()?.url) {
+          <div class="no-src">No preview available.</div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div class="modal-backdrop" *ngIf="showUpload()">
+    <div class="upload-modal">
+      <div class="upload-left">
+        <h2>Add New File</h2>
+        <div class="drop-area" [class.has-files]="!!pickedFile()" [class.is-uploading]="uploading()">
+          @if (uploading()) {
+            <div class="upload-progress-panel">
+              <div class="spinner upload-spinner"></div>
+              <p class="upload-status-title">Uploading file...</p>
+              <p class="upload-status-hint muted">{{ pickedFile()?.name }}</p>
+              <div class="upload-progress-bar">
+                <div class="progress-bar"><div class="progress-fill" [style.width.%]="uploadProgress()"></div></div>
+              </div>
+              <p class="upload-percent">{{ uploadProgress() }}%</p>
+            </div>
+          } @else if (pickedFile(); as file) {
+            <div class="picked-files-panel">
+              <div class="picked-files-head">
+                <span class="picked-count">1 file selected</span>
+                <label class="browse browse-sm">Change file<input type="file" (change)="onFilePicked($any($event.target).files)" /></label>
+              </div>
+              <div class="picked-file-row single">
+                <span class="picked-file-icon">{{ fileTypeIcon(file.name) }}</span>
+                <div class="picked-file-info">
+                  <span class="picked-file-name">{{ file.name }}</span>
+                  <span class="picked-file-size muted">{{ formatFileSize(file.size) }}</span>
+                </div>
+                <button type="button" class="remove-file-btn" (click)="removePickedFile()" title="Remove">✕</button>
+              </div>
+            </div>
+          } @else {
+            <div class="drop-inner">
+              <div class="drop-icon">📁</div>
+              <p class="drop-title">Choose one file to upload</p>
+              <p class="muted small">Supported: MP4, PDF, DOCX, XLSX · Max 2 GB</p>
+              <label class="browse">Browse File<input type="file" (change)="onFilePicked($any($event.target).files)" /></label>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="upload-right">
+        <h3>File Metadata</h3>
+        <p class="meta-required-note muted"><span class="required">*</span> Required fields</p>
+        <div class="meta-form">
+          <label>
+            <span>File Title <span class="required">*</span></span>
+            <input [(ngModel)]="uploadForm.title" name="uploadTitle" placeholder="Enter file title" />
+          </label>
+          <label>
+            <span>Description <span class="required">*</span></span>
+            <textarea [(ngModel)]="uploadForm.description" name="uploadDescription" rows="3" placeholder="Describe this file"></textarea>
+          </label>
+          <label>
+            <span>Course <span class="required">*</span></span>
+            <select [ngModel]="uploadCourse()" (ngModelChange)="uploadCourse.set($event)" name="uploadCourse">
+              @for (c of courseOptions(); track c.id) {
+                <option [value]="c.id">{{ c.label }}</option>
+              }
+            </select>
+          </label>
+          <div class="actions">
+            <button type="button" class="primary" (click)="uploadSelected()" [disabled]="uploading() || !canSubmitUpload()">
+              {{ uploading() ? 'Uploading...' : 'Upload File' }}
+            </button>
+            <button type="button" class="ghost" (click)="closeUpload()" [disabled]="uploading()">Cancel</button>
+          </div>
+          @if (uploadError()) {
+            <p class="upload-error-msg">{{ uploadError() }}</p>
+          }
+          @if (pickedFile() && !uploading() && !canSubmitUpload()) {
+            <p class="upload-ready-hint muted">Fill all required metadata fields (*) to upload</p>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit File Modal -->
+  <div class="modal-backdrop" *ngIf="showEditModal()" (click)="closeEditModal()">
+    <div class="edit-modal" (click)="$event.stopPropagation()">
+      <div class="edit-modal-header">
+        <h3>Edit File</h3>
+        <button type="button" class="close-btn-inline" (click)="closeEditModal()">✕</button>
+      </div>
+      @if (editingFile(); as file) {
+        <p class="edit-file-meta muted">Current: {{ file.type | uppercase }} · {{ file.size }} · {{ file.dateModified }}</p>
+        <div class="edit-form">
+          <div class="edit-file-replace">
+            <span class="field-label">Replace File <span class="muted">(optional)</span></span>
+            @if (editReplacementFile(); as newFile) {
+              <div class="picked-file-row single">
+                <span class="picked-file-icon">{{ fileTypeIcon(newFile.name) }}</span>
+                <div class="picked-file-info">
+                  <span class="picked-file-name">{{ newFile.name }}</span>
+                  <span class="picked-file-size muted">{{ formatFileSize(newFile.size) }} · will replace current file</span>
+                </div>
+                <button type="button" class="remove-file-btn" (click)="clearEditReplacement()" title="Remove">✕</button>
+              </div>
+            } @else {
+              <p class="edit-current-name muted">{{ file.title }}</p>
+              <label class="browse browse-sm edit-browse">Choose new file<input type="file" (change)="onEditFilePicked($any($event.target).files)" /></label>
+            }
+          </div>
+          <label>
+            <span>Title <span class="required">*</span></span>
+            <input [(ngModel)]="editForm.title" name="editTitle" />
+          </label>
+          <label>
+            <span>Description</span>
+            <textarea [(ngModel)]="editForm.description" name="editDescription" rows="3"></textarea>
+          </label>
+          <label>
+            <span>Course <span class="required">*</span></span>
+            <select [(ngModel)]="editForm.course" name="editCourse">
+              @for (c of courseOptions(); track c.id) {
+                <option [value]="c.id">{{ c.label }}</option>
+              }
+            </select>
+          </label>
+          @if (editErr()) {
+            <p class="upload-error-msg">{{ editErr() }}</p>
+          }
+          <div class="edit-actions">
+            <button type="button" class="primary" (click)="saveEditFile()" [disabled]="savingEdit() || !editForm.title.trim()">
+              {{ savingEdit() ? 'Saving...' : (editReplacementFile() ? 'Save & Replace File' : 'Save Changes') }}
+            </button>
+            <button type="button" class="ghost" (click)="closeEditModal()" [disabled]="savingEdit()">Cancel</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="loading-overlay" *ngIf="loading()">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Admin stats (home) -->
+  @if (viewMode() === 'home' && !loading() && isAdmin()) {
+    <section class="summary summary-admin">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-files">📁</div>
+        <div class="stat-body">
+          <span class="stat-label">Total Files</span>
+          <span class="stat-value">{{ totalFiles() }}</span>
+          <span class="stat-sub muted">Institute-wide</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-videos">▶</div>
+        <div class="stat-body">
+          <span class="stat-label">Videos</span>
+          <span class="stat-value">{{ totalVideos() }}</span>
+          <span class="stat-sub muted">Institute-wide</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-docs">📄</div>
+        <div class="stat-body">
+          <span class="stat-label">Documents</span>
+          <span class="stat-value">{{ totalDocs() }}</span>
+          <span class="stat-sub muted">Institute-wide</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-my-videos">▶</div>
+        <div class="stat-body">
+          <span class="stat-label">Your Videos</span>
+          <span class="stat-value">{{ myVideos() }}</span>
+          <span class="stat-sub muted">Uploaded by you</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-my-docs">📄</div>
+        <div class="stat-body">
+          <span class="stat-label">Your Documents</span>
+          <span class="stat-value">{{ myDocs() }}</span>
+          <span class="stat-sub muted">Uploaded by you</span>
+        </div>
+      </div>
+      @if (isOwner()) {
+        <div class="stat-card stat-card-wide">
+          <div class="stat-icon stat-icon-storage">💾</div>
+          <div class="stat-body">
+            <span class="stat-label">Storage</span>
+            <span class="stat-value stat-value-sm">{{ storageStats().percentLabel }} of {{ storageStats().quotaLabel }}</span>
+            <span class="stat-sub muted">{{ storageStats().usedLabel }} used · Videos {{ storageStats().videoLabel }} · PDFs {{ storageStats().pdfLabel }}</span>
+            <div class="stat-progress">
+              <div class="progress-bar"><div class="progress-fill" [style.width.%]="storageStats().percentUsed"></div></div>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- VIDEOS (home recent + videos tab) -->
+  <section class="content-panel" *ngIf="(viewMode() === 'home' || viewMode() === 'videos') && !loading()">
+    <h3 class="panel-heading">{{ viewMode() === 'videos' ? 'All Videos' : 'Recent Videos' }}</h3>
+    <div class="media-grid">
+      <div *ngFor="let v of displayVideos()" class="media-tile">
+        <div class="thumb" (click)="select(v)">
+          @if (v.thumbnail) {
+            <img [src]="resolveMediaUrl(v.thumbnail)" alt="thumbnail" (error)="onThumbError($event)" />
+          } @else {
+            <div class="video-placeholder">▶</div>
+          }
+          <div class="overlay play-overlay"><span class="play-icon">►</span></div>
+        </div>
+        <div class="meta">
+          <div class="tile-title">{{ v.title }}</div>
+          <small class="muted">{{ courseLabel(v.course) }} • {{ v.dateModified }} • {{ v.size }}</small>
+        </div>
+      </div>
+    </div>
+    <p class="empty-msg muted" *ngIf="!displayVideos().length">No data available</p>
+  </section>
+
+  <!-- DOCUMENTS (home recent + documents tab) -->
+  <section class="content-panel" *ngIf="(viewMode() === 'home' || viewMode() === 'documents') && !loading()">
+    <h3 class="panel-heading">{{ viewMode() === 'documents' ? 'All Documents' : 'Recent Documents' }}</h3>
+
+    <!-- List on home -->
+    <ul class="doc-list" *ngIf="viewMode() === 'home'">
+      <li *ngFor="let d of displayDocuments()" class="doc-row" [class.doc-opening]="openingDocId() === d.id">
+        <div class="doc-thumb doc-icon-thumb" (click)="select(d)">
+          <span class="doc-page"></span>
+          <span class="doc-ext">{{ docExtension(d.title) }}</span>
+          @if (openingDocId() === d.id) {
+            <div class="doc-inline-loader"><div class="spinner sm"></div></div>
+          }
+        </div>
+        <div class="doc-info">
+          <div class="doc-title">{{ d.title }}</div>
+          <div class="doc-meta muted">{{ courseLabel(d.course) }} • {{ d.size }} • {{ d.dateModified }}</div>
+        </div>
+        <button type="button" class="view-btn" (click)="select(d)" title="View">👁</button>
+      </li>
+    </ul>
+
+    <!-- Grid on documents tab -->
+    <div class="doc-grid" *ngIf="viewMode() === 'documents'">
+      <div *ngFor="let d of displayDocuments()" class="media-tile doc-tile" [class.doc-opening]="openingDocId() === d.id" (click)="select(d)">
+        <div class="doc-icon-thumb large">
+          <span class="doc-page"></span>
+          <span class="doc-ext">{{ docExtension(d.title) }}</span>
+          @if (openingDocId() === d.id) {
+            <div class="doc-inline-loader"><div class="spinner sm"></div></div>
+          }
+        </div>
+        <div class="doc-card-meta">
+          <div class="tile-title">{{ d.title }}</div>
+          <small class="muted">{{ courseLabel(d.course) }} • {{ d.size }} • {{ d.dateModified }}</small>
+        </div>
+      </div>
+    </div>
+    <p class="empty-msg muted" *ngIf="!displayDocuments().length">No data available</p>
+  </section>
+
+  <!-- FILES tab (admin) -->
+  <section class="content-panel files-panel" *ngIf="viewMode() === 'files' && isAdmin() && !loading()">
+    <div class="files-stats-bar">
+      <div class="files-stat">
+        <span class="files-stat-value">{{ totalFiles() }}</span>
+        <span class="files-stat-label">Total files</span>
+      </div>
+      <div class="files-stat">
+        <span class="files-stat-value">{{ totalVideos() }}</span>
+        <span class="files-stat-label">Videos</span>
+      </div>
+      <div class="files-stat">
+        <span class="files-stat-value">{{ totalDocs() }}</span>
+        <span class="files-stat-label">Documents</span>
+      </div>
+      <div class="files-stat files-stat-mine">
+        <span class="files-stat-value">{{ myVideos() }}</span>
+        <span class="files-stat-label">Your videos</span>
+      </div>
+      <div class="files-stat files-stat-mine">
+        <span class="files-stat-value">{{ myDocs() }}</span>
+        <span class="files-stat-label">Your documents</span>
+      </div>
+      @if (isOwner()) {
+        <div class="files-stat files-stat-storage">
+          <span class="files-stat-value">{{ storageStats().percentLabel }}</span>
+          <span class="files-stat-label">Storage · {{ storageStats().usedLabel }} / {{ storageStats().quotaLabel }}</span>
+        </div>
+      }
+    </div>
+
+    <div class="file-header-row">
+      <div>
+        <h3 class="panel-heading files-heading">All Files</h3>
+        <p class="files-sub muted">View, edit, or delete uploaded videos and documents</p>
+      </div>
+      <button type="button" class="primary" (click)="openUpload()">+ Add Files</button>
+    </div>
+
+    <div class="file-table-wrap">
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Course</th>
+            <th>Type</th>
+            <th>Size</th>
+            <th>Date</th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of allFiles()">
+            <td class="file-name-cell">
+              <span class="file-type-icon" [class.video]="f.type === 'video'">{{ f.type === 'video' ? '▶' : '📄' }}</span>
+              <div>
+                <div class="file-title">{{ f.title }}</div>
+                @if (f.description) {
+                  <div class="file-desc muted">{{ f.description }}</div>
+                }
+              </div>
+            </td>
+            <td>{{ courseLabel(f.course) }}</td>
+            <td><span class="type-badge" [class.video]="f.type === 'video'">{{ f.type | uppercase }}</span></td>
+            <td>{{ f.size || '—' }}</td>
+            <td>{{ f.dateModified || '—' }}</td>
+            <td class="action-cell">
+              <button type="button" class="file-action view" (click)="select(f)">View</button>
+              <button type="button" class="file-action edit" (click)="editFile(f)">Edit</button>
+              <button type="button" class="file-action delete" (click)="deleteFile(f)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="empty-msg muted" *ngIf="!allFiles().length">No files uploaded yet. Click “Add Files” to upload.</p>
+  </section>
+</div>

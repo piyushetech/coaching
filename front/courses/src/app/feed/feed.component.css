@@ -1,0 +1,92 @@
+.feed-page { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.compose textarea {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  font-family: inherit;
+}
+
+.compose textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+}
+
+.btn-sm {
+  background: #f1f5f9;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.post-card.featured {
+  border-color: #fbbf24;
+  background: linear-gradient(135deg, #fffbeb, var(--surface));
+}
+
+.post-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.post-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 2px; font-size: 12px; }
+.selected-badge { color: #b45309; font-weight: 700; }
+.post-content { margin: 0 0 12px; line-height: 1.6; font-size: 14px; color: #334155; }
+.post-actions { display: flex; gap: 16px; margin-bottom: 12px; }
+.post-actions button {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+.post-actions button.liked { background: #eef2ff; border-color: #a5b4fc; color: var(--primary-dark); }
+.comments { list-style: none; padding: 0; margin: 0 0 12px; }
+.comments li { padding: 8px 12px; background: #f8fafc; border-radius: var(--radius-sm); margin-bottom: 6px; font-size: 13px; }
+.comment-box { display: flex; gap: 8px; }
+.comment-box input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}

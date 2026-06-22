@@ -1,0 +1,38 @@
+<div class="auth-card">
+  <div class="reg-root">
+    <h2>Join Sankalp Classes</h2>
+    <p class="muted">Register as a student. Admin access is granted only by the institute owner.</p>
+    <form (ngSubmit)="submit()" [formGroup]="form" novalidate>
+      <label class="field"><span>Full Name <span class="required">*</span></span><input formControlName="name" /></label>
+      <label class="field"><span>Email <span class="required">*</span></span><input formControlName="email" type="email" /></label>
+      <label class="field"><span>Password <span class="required">*</span></span><input formControlName="password" type="password" /></label>
+
+      <div class="course-picks">
+        <span class="field-label">Courses <span class="required">*</span></span>
+        <p class="muted course-hint">Select all courses you want to enroll in</p>
+        @if (coursesLoading) {
+          <p class="muted">Loading courses...</p>
+        } @else {
+          <div class="course-chips">
+            @for (c of coursesService.courses(); track c.id) {
+              <label class="course-chip" [class.selected]="isCourseSelected(c.id)">
+                <input type="checkbox" hidden [checked]="isCourseSelected(c.id)" (change)="toggleCourse(c.id)" />
+                {{ c.label }}
+              </label>
+            } @empty {
+              <p class="muted">No courses available yet. Contact the institute.</p>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="actions">
+        <button type="submit" [disabled]="submitting || coursesLoading">
+          {{ submitting ? 'Creating...' : 'Register as Student' }}
+        </button>
+      </div>
+      <div class="error" *ngIf="error">{{ error }}</div>
+    </form>
+    <p class="muted">Already have an account? <a routerLink="/student/login">Sign in</a></p>
+  </div>
+</div>

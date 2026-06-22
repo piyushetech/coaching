@@ -1,0 +1,65 @@
+<div class="feed-page">
+  <div class="page-header">
+    <h1 class="portal-title">Community Feed</h1>
+    <p class="portal-subtitle">Connect with fellow Sankalp Classes students — ask questions, share, and learn together.</p>
+  </div>
+
+  <section class="compose card">
+    <textarea
+      placeholder="Ask a question or share an update..."
+      [ngModel]="newPost()"
+      (ngModelChange)="newPost.set($event)"
+      rows="3"
+    ></textarea>
+    <button type="button" class="btn-primary" (click)="submitPost()">Post</button>
+  </section>
+
+  @for (post of posts(); track post.id) {
+    <article class="post-card card" [class.featured]="post.selected">
+      <div class="post-head">
+        <div class="avatar">{{ post.authorName.charAt(0) }}</div>
+        <div>
+          <strong>{{ post.authorName }}</strong>
+          <div class="post-meta">
+            <span class="role-badge" [class.admin]="post.authorRole === 'admin'">{{ post.authorRole }}</span>
+            <span class="muted">{{ formatDate(post.createdAt) }}</span>
+            @if (post.selected) {
+              <span class="selected-badge">⭐ Selected</span>
+            }
+          </div>
+        </div>
+        @if (auth.isAdmin()) {
+          <button type="button" class="btn-sm" (click)="toggleSelected(post.id)">
+            {{ post.selected ? 'Unmark' : 'Mark Selected' }}
+          </button>
+        }
+      </div>
+      <p class="post-content">{{ post.content }}</p>
+      <div class="post-actions">
+        <button type="button" [class.liked]="isLiked(post)" (click)="toggleLike(post.id)">
+          👍 {{ post.likes.length }}
+        </button>
+        <span class="muted">💬 {{ post.comments.length }} comments</span>
+      </div>
+
+      @if (post.comments.length) {
+        <ul class="comments">
+          @for (c of post.comments; track c.id) {
+            <li><strong>{{ c.authorName }}</strong> {{ c.text }} <small class="muted">{{ formatDate(c.createdAt) }}</small></li>
+          }
+        </ul>
+      }
+
+      <div class="comment-box">
+        <input
+          type="text"
+          placeholder="Write a comment..."
+          [ngModel]="getCommentDraft(post.id)"
+          (ngModelChange)="setCommentDraft(post.id, $event)"
+          (keyup.enter)="submitComment(post.id)"
+        />
+        <button type="button" class="btn-sm" (click)="submitComment(post.id)">Reply</button>
+      </div>
+    </article>
+  }
+</div>

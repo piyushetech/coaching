@@ -1,0 +1,337 @@
+<div class="mock-exam-root">
+  <div class="me-toolbar">
+    <div>
+      <h2 class="portal-title me-portal-title">Mock Exam Portal</h2>
+      <p class="muted">
+        @if (isStudent()) {
+          Choose an exam for your enrolled courses · 50 Q · 60 min
+        } @else {
+          Create exams for your courses — students are notified automatically
+        }
+      </p>
+    </div>
+    @if (isAdmin()) {
+      <button type="button" class="me-create-btn" (click)="openCreateDialog()">+ Create New Exam</button>
+    }
+  </div>
+
+  <div class="me-main">
+
+    <!-- EXAM SELECTION -->
+    @if (screen() === 'select') {
+      <section class="me-select">
+        <div class="me-select-hero">
+          <div class="me-hero-icon">🎓</div>
+          <h2>{{ isStudent() ? 'Choose Your Mock Exam' : 'Available Mock Exams' }}</h2>
+          <p class="muted">
+            @if (isStudent()) {
+              Exams matched to your course enrollment
+            } @else {
+              Students with matching courses can take these exams
+            }
+          </p>
+        </div>
+
+        @if (availableExams().length) {
+          <div class="me-summary">
+            <div class="me-stat-card">
+              <div class="me-stat-icon me-stat-icon-exams">📝</div>
+              <div class="me-stat-body">
+                <span class="me-stat-label">Total Exams</span>
+                <span class="me-stat-value">{{ availableExams().length }}</span>
+              </div>
+            </div>
+            <div class="me-stat-card">
+              <div class="me-stat-icon me-stat-icon-courses">📚</div>
+              <div class="me-stat-body">
+                <span class="me-stat-label">Courses</span>
+                <span class="me-stat-value">{{ examCourseKeys().length }}</span>
+              </div>
+            </div>
+            <div class="me-stat-card">
+              <div class="me-stat-icon me-stat-icon-questions">❓</div>
+              <div class="me-stat-body">
+                <span class="me-stat-label">Questions</span>
+                <span class="me-stat-value">50</span>
+              </div>
+            </div>
+            <div class="me-stat-card">
+              <div class="me-stat-icon me-stat-icon-time">⏱</div>
+              <div class="me-stat-body">
+                <span class="me-stat-label">Duration</span>
+                <span class="me-stat-value me-stat-value-sm">60 min</span>
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (!availableExams().length) {
+          <div class="me-empty-state">
+            <p>No data available</p>
+            @if (isAdmin()) {
+              <button type="button" class="me-create-btn" (click)="openCreateDialog()">+ Create First Exam</button>
+            }
+          </div>
+        }
+
+        @for (courseKey of examCourseKeys(); track courseKey) {
+          <div class="me-exam-group">
+            <h3 class="me-group-heading">{{ courseIcon(courseKey) }} {{ courseLabel(courseKey) }}</h3>
+            <div class="me-exam-grid">
+              @for (exam of examGroups()[courseKey]; track exam.id) {
+                <div class="me-exam-card" [class.clickable]="isStudent()" (click)="isStudent() && startExam(exam)">
+                  <div class="me-exam-card-accent"></div>
+                  <div class="me-exam-card-inner">
+                    <div class="me-exam-card-top">
+                      <span class="me-type-badge">{{ exam.examType }}</span>
+                      @if (isStudent()) {
+                        <span class="me-arrow">→</span>
+                      }
+                    </div>
+                    <h4>{{ exam.title }}</h4>
+                    <p class="muted me-exam-desc">{{ exam.description }}</p>
+                    <div class="me-exam-meta">
+                      <span>📝 {{ exam.questions }} Q</span>
+                      <span>⏱ {{ exam.durationMinutes }} min</span>
+                      <span>📚 {{ exam.sections.length }} sections</span>
+                    </div>
+                    @if (isAdmin() && !isStudent()) {
+                      <p class="me-admin-note muted">Visible to {{ courseLabel(exam.course) }} students</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- LIVE EXAM -->
+    @if (screen() === 'exam' && activeExam(); as exam) {
+      <section class="me-live">
+        <div class="me-exam-bar">
+          <div>
+            <h2>{{ exam.title }}</h2>
+            <p class="muted">Q {{ currentIndex() + 1 }} of {{ questions().length }} · {{ answeredCount() }} answered</p>
+          </div>
+          <div class="me-exam-bar-right">
+            <div class="me-timer" [class]="timerClass()">⏱ {{ formatTimer(timeLeft()) }}</div>
+            <button type="button" class="me-submit-btn" (click)="confirmSubmit()">Submit Exam</button>
+          </div>
+        </div>
+
+        <div class="me-exam-layout">
+          <div class="me-question-panel">
+            @if (currentQuestion(); as q) {
+              <div class="me-q-tags">
+                <span class="me-cat-tag" [class]="categoryClass[q.category]">{{ q.category }}</span>
+                <span class="muted">Question {{ q.number }}</span>
+              </div>
+              <h3 class="me-q-text">{{ q.question }}</h3>
+              <div class="me-options">
+                @for (opt of q.options; track $index; let i = $index) {
+                  <label class="me-option" [class.selected]="isSelected(q.id, i)">
+                    <input type="radio" [name]="'q-' + q.id" [checked]="isSelected(q.id, i)" (change)="selectOption(i)" />
+                    <span class="me-opt-letter">{{ optionLetter(i) }}</span>
+                    <span>{{ opt }}</span>
+                  </label>
+                }
+              </div>
+              @if (isAnswered(q.id)) {
+                <button type="button" class="me-clear" (click)="clearAnswer()">Clear response</button>
+              }
+            }
+            <div class="me-q-nav">
+              <button type="button" [disabled]="currentIndex() === 0" (click)="goToQuestion(currentIndex() - 1)">← Previous</button>
+              <button type="button" [disabled]="currentIndex() >= questions().length - 1" (click)="goToQuestion(currentIndex() + 1)">Next →</button>
+            </div>
+          </div>
+
+          <aside class="me-palette">
+            <h3>Question Palette</h3>
+            <div class="me-palette-grid">
+              @for (q of questions(); track q.id; let i = $index) {
+                <button type="button"
+                  [class]="paletteClass(q)"
+                  [class.current]="i === currentIndex()"
+                  (click)="goToQuestion(i)">{{ q.number }}</button>
+              }
+            </div>
+            <div class="me-palette-legend">
+              <div><span class="legend-box unvisited"></span> Not visited</div>
+              <div><span class="legend-box visited"></span> Visited, unanswered</div>
+              <div><span class="legend-box answered"></span> Answered</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    }
+
+    <!-- RESULTS -->
+    @if (screen() === 'results' && activeExam(); as exam) {
+      @if (examResults(); as results) {
+        <section class="me-results">
+          <div class="me-result-hero" [class.passed]="passed()" [class.failed]="!passed()">
+            <div class="me-trophy">{{ passed() ? '🏆' : '💪' }}</div>
+            <h2>{{ passed() ? 'Great Job!' : 'Keep Practicing!' }}</h2>
+            <p class="muted">{{ exam.title }} — Result Summary</p>
+            <div class="me-big-score">{{ results.score }}<span>/ {{ results.total }}</span></div>
+            <p class="me-accuracy">{{ results.accuracy }}% Accuracy</p>
+            <div class="me-result-stats">
+              <div><strong>{{ results.accuracy }}%</strong><span>Accuracy</span></div>
+              <div><strong>{{ results.timeSpentLabel }}</strong><span>Time Spent</span></div>
+              <div><strong>{{ results.sectionBreakdown.length }}</strong><span>Sections</span></div>
+            </div>
+          </div>
+
+          <div class="me-sections card">
+            <h3>Score by Section</h3>
+            @for (s of results.sectionBreakdown; track s.section) {
+              <div class="me-section-row">
+                <div class="me-section-label">
+                  <span>{{ s.section }}</span>
+                  <span class="muted">{{ s.correct }}/{{ s.total }} ({{ s.percentage }}%)</span>
+                </div>
+                <div class="me-bar-track">
+                  <div class="me-bar-fill" [class]="sectionBarClass(s.percentage)" [style.width.%]="s.percentage"></div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="me-review card">
+            <button type="button" class="me-review-toggle" (click)="toggleReview()">
+              <div>
+                <h3>Review Answers</h3>
+                <p class="muted">
+                  {{ reviewCorrect() }} correct ·
+                  {{ reviewWrong() }} wrong ·
+                  {{ reviewSkipped() }} skipped
+                </p>
+              </div>
+              <span>{{ showReview() ? '▲' : '▼' }}</span>
+            </button>
+            @if (showReview()) {
+              <div class="me-review-list">
+                @for (item of results.review; track item.id) {
+                  <div class="me-review-item">
+                    <button type="button" class="me-review-head" (click)="toggleReviewItem(item.id)">
+                      <span class="me-status" [class.correct]="item.isCorrect" [class.wrong]="!item.isCorrect && !item.isSkipped" [class.skipped]="item.isSkipped">
+                        {{ item.isSkipped ? '○' : item.isCorrect ? '✓' : '✗' }}
+                      </span>
+                      <div>
+                        <div class="me-review-meta">
+                          <span class="muted">Q{{ item.number }}</span>
+                          <span class="me-cat-tag small" [class]="categoryClass[item.category]">{{ item.category }}</span>
+                        </div>
+                        <p>{{ item.question }}</p>
+                      </div>
+                      <span>{{ expandedReviewId() === item.id ? '▲' : '▼' }}</span>
+                    </button>
+                    @if (expandedReviewId() === item.id) {
+                      <div class="me-review-body">
+                        @for (opt of item.options; track $index; let i = $index) {
+                          <div class="me-review-opt"
+                            [class.correct-opt]="i === item.correctIndex"
+                            [class.wrong-opt]="i === item.selectedIndex && !item.isCorrect">
+                            {{ optionLetter(i) }}. {{ opt }}
+                            @if (i === item.correctIndex) { ✓ }
+                            @if (i === item.selectedIndex && !item.isCorrect) { ✗ }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="me-result-actions">
+            <button type="button" class="me-primary" (click)="retakeExam()">↻ Retake Exam</button>
+            <button type="button" class="me-ghost" (click)="resetToSelect()">Back to Exam List</button>
+          </div>
+        </section>
+      }
+    }
+  </div>
+
+  <!-- Submit confirm -->
+  @if (showSubmitConfirm()) {
+    <div class="me-modal-backdrop" (click)="cancelSubmit()">
+      <div class="me-modal" (click)="$event.stopPropagation()">
+        <div class="me-modal-icon">⚠️</div>
+        <h3>Submit Exam?</h3>
+        <p class="muted">You have answered <strong>{{ answeredCount() }}</strong> of <strong>{{ questions().length }}</strong> questions.</p>
+        @if (answeredCount() < questions().length) {
+          <p class="muted warn">Unanswered questions will be marked incorrect.</p>
+        }
+        <div class="me-modal-actions">
+          <button type="button" class="me-ghost" (click)="cancelSubmit()">Continue Exam</button>
+          <button type="button" class="me-primary" (click)="submitExam()">Yes, Submit</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Create exam dialog -->
+  @if (showCreateDialog()) {
+    <div class="me-modal-backdrop" (click)="closeCreateDialog()">
+      <div class="me-modal me-create-modal" (click)="$event.stopPropagation()">
+        <div class="me-modal-header">
+          <h3>Create New Mock Exam</h3>
+          <button type="button" class="me-modal-close" (click)="closeCreateDialog()">✕</button>
+        </div>
+        <div class="me-modal-body">
+          <label class="me-form-field">
+            <span>Exam Title *</span>
+            <input [(ngModel)]="newExam.title" placeholder="e.g. JEE Physics Mock 2" />
+          </label>
+          <div class="me-form-row">
+            <label class="me-form-field">
+              <span>Course *</span>
+              <select [(ngModel)]="newExam.course">
+                @for (c of adminCourseOptions(); track c.id) {
+                  <option [value]="c.id">{{ c.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="me-form-field">
+              <span>Exam Type</span>
+              <select [(ngModel)]="newExam.examType">
+                @for (t of examTypes; track t) {
+                  <option [value]="t">{{ t }}</option>
+                }
+              </select>
+            </label>
+          </div>
+          <label class="me-form-field">
+            <span>Description</span>
+            <textarea [(ngModel)]="newExam.description" rows="2" placeholder="Brief description for students"></textarea>
+          </label>
+          <div class="me-form-row">
+            <label class="me-form-field">
+              <span>Questions</span>
+              <input type="number" [(ngModel)]="newExam.questions" min="10" max="100" />
+            </label>
+            <label class="me-form-field">
+              <span>Duration (mins)</span>
+              <input type="number" [(ngModel)]="newExam.durationMinutes" min="15" max="180" />
+            </label>
+          </div>
+          <p class="muted me-notify-hint">📢 Students enrolled in this course will receive a notification.</p>
+          @if (createError()) {
+            <p class="me-form-error">{{ createError() }}</p>
+          }
+        </div>
+        <div class="me-modal-actions">
+          <button type="button" class="me-ghost" (click)="closeCreateDialog()">Cancel</button>
+          <button type="button" class="me-primary" [disabled]="creatingExam()" (click)="createExam()">
+            {{ creatingExam() ? 'Creating...' : 'Create Exam' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

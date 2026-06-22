@@ -1,0 +1,51 @@
+<div class="shell-root portal-page-bg">
+  <header class="top-header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-mark">S</span>
+        <span>Sankalp Classes</span>
+      </div>
+      <nav class="top-nav-menu">
+        <a class="nav-item" [class.active]="isActive('home')" routerLink="/dashboard">Home</a>
+        <a class="nav-item" [class.active]="isActive('videos')" routerLink="/dashboard/videos">Videos</a>
+        <a class="nav-item" [class.active]="isActive('documents')" routerLink="/dashboard/documents">Documents</a>
+        <a class="nav-item" [class.active]="isActive('feed')" routerLink="/dashboard/feed">Feed</a>
+        <a class="nav-item" [class.active]="isActive('mock-exam')" routerLink="/dashboard/mock-exam">Mock Exam</a>
+        @if (isAdmin) {
+          <a class="nav-item" [class.active]="isActive('files')" routerLink="/dashboard/files">Files</a>
+        }
+        <a class="nav-item" [class.active]="isActive('settings')" routerLink="/dashboard/settings">Profile & Settings</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      @if (showUpload) {
+        <button type="button" class="upload" (click)="onUploadClick()">+ NEW UPLOAD</button>
+      }
+      <a class="icon-btn bell-btn" routerLink="/dashboard/notifications" title="Notifications">
+        🔔
+        @if (unreadCount() > 0) {
+          <span class="badge">{{ unreadCount() }}</span>
+        }
+      </a>
+      <a class="header-avatar-btn" routerLink="/dashboard/settings" title="Profile & Settings">
+        <span hidden>{{ auth.userRev() }}</span>
+        @if (hasCustomAvatar) {
+          <img [src]="userAvatar" alt="Profile" (error)="onThumbError($event)" />
+        } @else {
+          <span class="header-avatar-fallback">{{ userInitial }}</span>
+        }
+      </a>
+      <div class="profile">
+        <div class="profile-text">
+          <span class="username">{{ userName }}</span>
+          <span class="userrole">{{ userRole }}</span>
+        </div>
+      </div>
+      <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="shell-main">
+    <router-outlet />
+  </main>
+</div>

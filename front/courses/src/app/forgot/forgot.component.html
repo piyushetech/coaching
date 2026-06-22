@@ -1,0 +1,12 @@
+<div class="auth-card">
+  <div class="forgot-root">
+    <h2>Reset password</h2>
+    <p class="muted">Enter your email and we'll send reset instructions.</p>
+    <form (ngSubmit)="submit()" [formGroup]="form" novalidate>
+      <label class="field"><span>Email</span><input formControlName="email" type="email" /></label>
+      <div class="actions"><button type="submit">{{ submitting ? 'Sending...' : 'Send reset link' }}</button></div>
+    </form>
+    <div class="message" *ngIf="message">{{ message }}</div>
+    <p class="muted"><a routerLink="/student/login">Back to login</a></p>
+  </div>
+</div>
