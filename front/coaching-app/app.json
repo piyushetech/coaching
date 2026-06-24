@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Sankalp Coaching",
+    "slug": "coaching-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.sankalp.coaching",
+      "versionCode": 1,
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-screen-capture"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d15bef2a-50ee-4132-8ee6-dbcf6e6545e2"
+      }
+    }
+  }
+}
