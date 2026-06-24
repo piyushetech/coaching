@@ -19,9 +19,12 @@ export async function seedDatabase() {
       role: 'admin',
       isOwner: true,
       courses: [],
-      profile: {}
+      profile: { mobile: '7619548975' }
     });
-    console.log('Seeded head admin: owner@sankalp.com / password');
+    console.log('Seeded head admin: owner@sankalp.com / password (mobile OTP: 7619548975)');
+  } else if (!owner.profile?.mobile) {
+    owner.profile = { ...owner.profile?.toObject?.() ?? owner.profile, mobile: '7619548975' };
+    await owner.save();
   }
   await seedCourses();
 }

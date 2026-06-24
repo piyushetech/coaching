@@ -6,8 +6,10 @@ import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { User } from '../models/User.js';
 import { Course } from '../models/Course.js';
+import { OtpCode } from '../models/OtpCode.js';
 import { mapDoc } from '../config/db.js';
 import { authRequired, signToken } from '../middleware/auth.js';
+import { findUserByMobile, normalizeMobile } from '../utils/mobile.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const avatarsDir = path.join(__dirname, '../../uploads/avatars');
@@ -116,6 +118,99 @@ router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
   res.json({ success: true, message: 'Reset instructions sent to your email' });
+});
+
+function generateOtpCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+router.post('/otp/send', async (req, res) => {
+  try {
+    const mobile = normalizeMobile(req.body.mobile);
+    if (!mobile) {
+      return res.status(400).json({ success: false, message: 'Enter a valid 10-digit mobile number.' });
+    }
+
+    const user = await findUserByMobile(mobile);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Mobile number not registered. Ask your admin to add your number in Settings.'
+      });
+    }
+
+    const code = generateOtpCode();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await OtpCode.deleteMany({ mobile });
+    await OtpCode.create({ mobile, code, expiresAt });
+
+    console.log(`[OTP] ${mobile} → ${code} (${user.name}, ${user.role})`);
+
+    const payload = {
+      success: true,
+      message: 'OTP sent to your mobile number.'
+    };
+    if (process.env.NODE_ENV !== 'production') {
+      payload.devOtp = code;
+    }
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/otp/verify', async (req, res) => {
+  try {
+    const mobile = normalizeMobile(req.body.mobile);
+    const otp = String(req.body.otp ?? '').trim();
+    const portal = req.body.portal;
+
+    if (!mobile) {
+      return res.status(400).json({ success: false, message: 'Enter a valid 10-digit mobile number.' });
+    }
+    if (!/^\d{6}$/.test(otp)) {
+      return res.status(400).json({ success: false, message: 'Enter the 6-digit OTP.' });
+    }
+
+    const record = await OtpCode.findOne({ mobile }).sort({ createdAt: -1 });
+    if (!record || record.expiresAt < new Date()) {
+      return res.status(400).json({ success: false, message: 'OTP expired. Request a new one.' });
+    }
+    if (record.attempts >= 5) {
+      return res.status(429).json({ success: false, message: 'Too many attempts. Request a new OTP.' });
+    }
+
+    if (record.code !== otp) {
+      record.attempts += 1;
+      await record.save();
+      return res.status(400).json({ success: false, message: 'Incorrect OTP. Please try again.' });
+    }
+
+    const user = await findUserByMobile(mobile);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Account not found.' });
+    }
+
+    if (portal === 'student' && user.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'This mobile is registered as admin. Use the Admin Portal.'
+      });
+    }
+    if (portal === 'admin' && user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'This mobile is registered as student. Use the Student Portal.'
+      });
+    }
+
+    await OtpCode.deleteMany({ mobile });
+    const safe = mapDoc(user);
+    const token = signToken(user._id.toString());
+    res.json({ success: true, token, user: safe, message: 'Login successful' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 router.get('/me', authRequired, (req, res) => {
