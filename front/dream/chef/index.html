@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chef — Recipe App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="showcase">
+
+    <!-- HOME SCREEN -->
+    <div>
+      <p class="phone-label">Home Screen</p>
+      <div class="phone" id="phone-home">
+        <div class="home-header">
+          <div class="header-top">
+            <div class="user-greet">
+              <img id="user-avatar" src="" alt="Jenny" />
+              <div>
+                <h2>Hello, <span id="user-name">Jenny</span>!</h2>
+                <p id="user-sub">Check Amazing Recipes..</p>
+              </div>
+            </div>
+            <button class="notif-btn" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            </button>
+          </div>
+          <div class="search-row">
+            <div class="search-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" placeholder="Search Any Recipe.." id="search-input" />
+            </div>
+            <button class="filter-btn" aria-label="Filter">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M6 12h12M9 18h6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="scroll-body">
+          <div class="section-head">
+            <h3>Categories</h3>
+            <a href="#">See All</a>
+          </div>
+          <div class="cat-scroll" id="categories"></div>
+
+          <div class="section-head">
+            <h3>Popular Recipes</h3>
+            <a href="#">See All</a>
+          </div>
+          <div id="popular-list"></div>
+
+          <div class="section-head">
+            <h3>Top Chefs</h3>
+            <a href="#">See All</a>
+          </div>
+          <div class="chef-scroll" id="chefs"></div>
+        </div>
+
+        <nav class="bottom-nav">
+          <button class="nav-btn active">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.5z"/></svg>
+            Home
+          </button>
+          <button class="nav-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Discover
+          </button>
+          <button class="nav-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Favourite
+          </button>
+          <button class="nav-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat
+          </button>
+          <button class="nav-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profile
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- DETAIL SCREEN -->
+    <div>
+      <p class="phone-label">Recipe Detail</p>
+      <div class="phone phone-detail" id="phone-detail">
+        <div class="detail-scroll">
+          <div class="detail-hero">
+            <img id="detail-hero-img" src="" alt="" />
+            <div class="detail-nav">
+              <button class="circle-btn" id="back-btn" aria-label="Back">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="detail-nav-right">
+                <button class="circle-btn" id="detail-heart" aria-label="Save">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </button>
+                <button class="circle-btn" aria-label="Share">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="gallery-row" id="gallery"></div>
+          </div>
+
+          <div class="detail-body">
+            <div class="detail-top-row">
+              <span class="detail-cat" id="detail-cat">Pasta</span>
+              <span class="detail-rating"><span class="star">★</span> <span id="detail-rating">4.9</span></span>
+            </div>
+            <div class="detail-title-row">
+              <h1 id="detail-title">Burst Tomato Pasta</h1>
+              <div class="veg-badge" id="detail-veg"></div>
+            </div>
+
+            <p class="recipe-by-label">Recipe by</p>
+            <div class="author-row">
+              <img id="author-avatar" src="" alt="" />
+              <div class="author-info">
+                <h4 id="author-name">Dianne Russell</h4>
+                <p id="author-role">Chef</p>
+              </div>
+              <div class="author-actions">
+                <button class="action-btn" aria-label="Chat">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </button>
+                <button class="action-btn" aria-label="Call">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <p class="block-title">Description</p>
+            <p class="desc-text" id="detail-desc"></p>
+            <button class="read-more" id="read-more">Read more</button>
+
+            <div class="info-cards">
+              <div class="info-card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div class="label">Cooking Time</div>
+                <div class="value" id="detail-time">35 min</div>
+              </div>
+              <div class="info-card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                <div class="label">Cuisine</div>
+                <div class="value" id="detail-cuisine">Italian</div>
+              </div>
+            </div>
+
+            <div class="ingredients-head">
+              <h3>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12V2"/><path d="M12 12l7-7"/></svg>
+                Ingredients
+              </h3>
+              <button class="serving-select">
+                <span id="serving-count">1</span> Serving ▾
+              </button>
+            </div>
+            <ul class="ingredient-list" id="detail-ingredients"></ul>
+          </div>
+        </div>
+
+        <div class="watch-btn-wrap">
+          <button class="watch-btn" id="watch-btn">
+            <span class="play-circle">
+              <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </span>
+            Watch Videos
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/mock-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
