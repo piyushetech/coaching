@@ -383,7 +383,8 @@ function bindEvents() {
   };
   document.getElementById('logout-btn').onclick = logout;
   document.getElementById('tab-latest').onclick = resetToLatest;
-  document.getElementById('briefing-btn')?.onclick = playMorningBriefing;
+  const briefingBtn = document.getElementById('briefing-btn');
+  if (briefingBtn) briefingBtn.onclick = playMorningBriefing;
 
   document.querySelectorAll('[data-filter]').forEach((btn) => {
     btn.onclick = () => {

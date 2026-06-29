@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const rawApi = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API = rawApi.endsWith('/api') ? rawApi : `${rawApi.replace(/\/$/, '')}/api`;
 const PAGE_SIZE = 10;
 
 export const api = axios.create({ baseURL: API, timeout: 20000 });

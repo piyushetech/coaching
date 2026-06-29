@@ -45,6 +45,9 @@ cd inshort/infra
 docker compose up --build
 ```
 
+### Free cloud deploy (Render + MongoDB Atlas)
+See **[docs/DEPLOY_FREE.md](docs/DEPLOY_FREE.md)** for step-by-step $0 deployment of Node API, Python service, web, and admin.
+
 **Admin:** `admin@inshort.com` / `Admin@123456`
 
 Optional: set `OPENAI_API_KEY` in backend or python `.env` for smarter summaries and AI features.

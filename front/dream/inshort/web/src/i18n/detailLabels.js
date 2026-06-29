@@ -1,6 +1,6 @@
 ﻿
 /** Detail screen UI: disclaimer, action buttons, deep dive labels, bias, comments */
-export const DETAIL_LABELS: Record<string, DetailLabels> = {
+export const DETAIL_LABELS = {
   en: {
     disclaimerTitle: 'Disclaimer',
     disclaimerText:
@@ -248,7 +248,7 @@ export const DETAIL_LABELS: Record<string, DetailLabels> = {
   },
 };
 
-export const mergeDetailLabels = (lang: string, base: DetailLabels): DetailLabels => ({
+export const mergeDetailLabels = (lang, base) => ({
   ...DETAIL_LABELS.en,
   ...base,
   ...(DETAIL_LABELS[lang] || {}),

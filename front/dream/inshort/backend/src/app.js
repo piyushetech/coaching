@@ -17,10 +17,21 @@ connectDB();
 app.use(helmet());
 app.use(cors({
   origin: (origin, cb) => {
-    const allowed = [process.env.CLIENT_URL, process.env.ADMIN_URL, process.env.WEB_URL].filter(Boolean);
-    if (!origin || allowed.includes(origin) || (process.env.NODE_ENV !== 'production' && origin?.startsWith('http://localhost'))) {
+    const allowed = [
+      process.env.CLIENT_URL,
+      process.env.ADMIN_URL,
+      process.env.WEB_URL,
+      ...(process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
+    ].filter(Boolean);
+    if (
+      !origin
+      || allowed.includes(origin)
+      || (process.env.NODE_ENV !== 'production' && origin?.startsWith('http://localhost'))
+    ) {
       cb(null, true);
-    } else cb(null, false);
+    } else {
+      cb(null, false);
+    }
   },
   credentials: true,
 }));
